@@ -1,0 +1,46 @@
+# -----------------------------------------------------------------------------
+# DynaKube CR de ejemplo — instrumentación OneAgent (cloudNativeFullStack)
+# -----------------------------------------------------------------------------
+# 1) Copia este archivo a dynatrace/dynakube.yaml (ese sí está en .gitignore)
+# 2) Reemplaza ENVIRONMENTID por el ID de tu entorno (p.ej. abc12345)
+# 3) Crea el secret 'dynakube' en el namespace 'dynatrace' ANTES de aplicar:
+#
+#    kubectl -n dynatrace create secret generic dynakube \
+#      --from-literal="apiToken=<OPERATOR_TOKEN>" \
+#      --from-literal="dataIngestToken=<DATA_INGEST_TOKEN>"
+#
+#    OPERATOR_TOKEN   -> token de plataforma con los scopes del operador
+#                        (Kubernetes: ActiveGate token, Create ActiveGate tokens,
+#                         Read entities, Read settings, Write settings, etc.)
+#    DATA_INGEST_TOKEN-> token con "Ingest metrics" + "Ingest logs"
+#
+# apiVersion: v1beta6 es la última; el operador v1.11 también acepta v1beta5.
+# -----------------------------------------------------------------------------
+apiVersion: dynatrace.com/v1beta5
+kind: DynaKube
+metadata:
+  name: dynakube
+  namespace: dynatrace
+spec:
+  # URL de tu API de Dynatrace, SIEMPRE terminada en /api
+  apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
+
+  # Auto-instrumentación de todos los pods del cluster (incluye aiops-demo)
+  oneAgent:
+    cloudNativeFullStack:
+      # En kind basta con los defaults. Si quieres acotar namespaces,
+      # usa namespaceSelector.
+      {}
+
+  # ActiveGate: necesario para el monitoreo de Kubernetes y el routing
+  activeGate:
+    capabilities:
+      - routing
+      - kubernetes-monitoring
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1.5Gi

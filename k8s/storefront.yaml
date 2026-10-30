@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storefront
+  namespace: aiops-demo
+  labels:
+    app: storefront
+    app.kubernetes.io/name: storefront
+    app.kubernetes.io/part-of: aiops-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: storefront
+  template:
+    metadata:
+      labels:
+        app: storefront
+        app.kubernetes.io/name: storefront
+        app.kubernetes.io/part-of: aiops-demo
+    spec:
+      containers:
+        - name: storefront
+          # Reemplazado por scripts/deploy.sh con tu registry de ECR:
+          #   <ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/aiops-demo/storefront:v1
+          image: __STOREFRONT_IMAGE__
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PAYMENTS_URL
+              value: "http://payments:8080"
+            - name: APP_VERSION
+              value: "v1"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "250m"
+              memory: "128Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: storefront
+  namespace: aiops-demo
+  labels:
+    app: storefront
+spec:
+  selector:
+    app: storefront
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080

@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loadgen
+  namespace: aiops-demo
+  labels:
+    app: loadgen
+    app.kubernetes.io/name: loadgen
+    app.kubernetes.io/part-of: aiops-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: loadgen
+  template:
+    metadata:
+      labels:
+        app: loadgen
+        app.kubernetes.io/name: loadgen
+        app.kubernetes.io/part-of: aiops-demo
+    spec:
+      containers:
+        - name: loadgen
+          image: curlimages/curl:8.11.1
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              echo "loadgen -> storefront/checkout";
+              while true; do
+                curl -s -o /dev/null -w "checkout %{http_code}\n" \
+                  http://storefront:8080/checkout || true;
+                sleep 1;
+              done
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "16Mi"
+            limits:
+              cpu: "50m"
+              memory: "32Mi"

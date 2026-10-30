@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payments
+  namespace: aiops-demo
+  labels:
+    app: payments
+    app.kubernetes.io/name: payments
+    app.kubernetes.io/part-of: aiops-demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: payments
+  template:
+    metadata:
+      labels:
+        app: payments
+        app.kubernetes.io/name: payments
+        app.kubernetes.io/part-of: aiops-demo
+    spec:
+      containers:
+        - name: payments
+          # Reemplazado por scripts/deploy.sh con tu registry de ECR:
+          #   <ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/aiops-demo/payments:v2
+          image: __PAYMENTS_IMAGE__
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            # ---- FALLA INYECTADA ----
+            # Este es el "bug" que el agente debe diagnosticar y corregir en el PR.
+            # 40% de las llamadas a /charge devuelven 500.
+            - name: FAIL_RATE
+              value: "0.4"
+            - name: SLOW_MS
+              value: "0"
+            - name: APP_VERSION
+              value: "v2"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "250m"
+              memory: "128Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payments
+  namespace: aiops-demo
+  labels:
+    app: payments
+spec:
+  selector:
+    app: payments
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080

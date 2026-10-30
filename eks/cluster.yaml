@@ -1,0 +1,32 @@
+# -----------------------------------------------------------------------------
+# Cluster EKS para el lab (eksctl)
+# -----------------------------------------------------------------------------
+# Managed node group (NO Fargate): OneAgent cloudNativeFullStack necesita acceso
+# a nivel de nodo, y en Fargate no se puede instalar. Por eso usamos EC2.
+#
+#   eksctl create cluster -f eks/cluster.yaml
+#
+# Ajusta region y tamaño según tu cuenta. 2x t3.medium alcanza para el lab.
+# -----------------------------------------------------------------------------
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: aiops-demo
+  region: us-east-1
+  version: "1.31"
+
+iam:
+  withOIDC: true
+
+managedNodeGroups:
+  - name: ng-default
+    instanceType: t3.medium
+    desiredCapacity: 2
+    minSize: 2
+    maxSize: 3
+    volumeSize: 30
+    # Permite a los nodos jalar imágenes desde ECR
+    iam:
+      withAddonPolicies:
+        imageBuilder: true
